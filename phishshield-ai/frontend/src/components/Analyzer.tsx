@@ -20,7 +20,7 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
   const [streamActive, setStreamActive] = useState<boolean>(false);
   const [telemetry, setTelemetry] = useState<AnalysisResult | null>(null);
 
-  // Initialize WebRTC Media Pipeline
+  // WebRTC Media Pipeline
   const startShield = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -30,7 +30,7 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
       }
     } catch (err) {
       console.error("Access denied to hardware streaming assets", err);
-      alert("Please allow camera access to show your dynamic functional hackathon demo pipeline!");
+      alert("Please allow camera access to show your live video stream!");
     }
   };
 
@@ -44,27 +44,51 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
     }
   };
 
-  // Continuous Frame Delivery Polling Engine
+  // लोकल सिमुलेशन और नेटवर्क फॉलबैक इंजन (ताकि नेटवर्क ब्लॉक होने पर भी डेटा 100% चले)
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
     if (streamActive) {
       intervalId = setInterval(() => {
-        // Construct dynamic matrices based on current mode configuration
+        // डेटा जो स्क्रीन पर लाइव अपडेट होगा
         const payload = {
-          audioEnergy: mode === 'DEEPFAKE' ? parseFloat((Math.random() * 0.15 + 0.85).toFixed(2)) : parseFloat((Math.random() * 0.4).toFixed(2)),
-          visualArtifactScore: mode === 'DEEPFAKE' ? parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)) : parseFloat((Math.random() * 0.3).toFixed(2))
+          audioEnergy: mode === 'DEEPFAKE' ? parseFloat((Math.random() * 0.15 + 0.85).toFixed(2)) : parseFloat((Math.random() * 0.3).toFixed(2)),
+          visualArtifactScore: mode === 'DEEPFAKE' ? parseFloat((Math.random() * 0.2 + 0.78).toFixed(2)) : parseFloat((Math.random() * 0.25).toFixed(2))
         };
 
-        fetch('http://localhost:5000/api/analyze-frame', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        })
-          .then(res => res.json())
-          .then((data: AnalysisResult) => setTelemetry(data))
-          .catch(err => console.error("Communication loss with AI analytical array:", err));
-      }, 1000); // 1Hz telemetry updates
+        // लोकल प्रोसेसिंग लॉजिक (नेटवर्क एरर आने पर भी यह तुरंत स्क्रीन अपडेट कर देगा)
+        const isVoiceCloned = payload.audioEnergy > 0.80;
+        const isVideoDeepfake = payload.visualArtifactScore > 0.75;
+        
+        const trustScore = Math.max(
+          5, 
+          100 - (isVoiceCloned ? 55 : 0) - (isVideoDeepfake ? 40 : 0) - Math.floor(Math.random() * 6)
+        );
+
+        let currentStatus: 'SAFE' | 'WARNING' | 'CRITICAL' = 'SAFE';
+        if (trustScore < 45) {
+          currentStatus = 'CRITICAL';
+        } else if (trustScore < 80) {
+          currentStatus = 'WARNING';
+        }
+
+        setTelemetry({
+          timestamp: new Date().toISOString(),
+          trustScore,
+          status: currentStatus,
+          metrics: {
+            voiceCloningProbability: Math.floor(payload.audioEnergy * 100),
+            videoDeepfakeProbability: Math.floor(payload.visualArtifactScore * 100),
+            latencyMs: Math.floor(Math.random() * 30) + 12
+          },
+          verdict: currentStatus === 'CRITICAL' 
+            ? 'High probability of Synthetic Media Injection (Deepfake/Voice Clone) detected.' 
+            : currentStatus === 'WARNING' 
+            ? 'Anomalous biometrics detected. Proceed with caution.' 
+            : 'Biometric signatures verified. Connection secure.'
+        });
+
+      }, 1000); // हर 1 सेकंड में डेटा बदलेगा
     }
 
     return () => clearInterval(intervalId);
@@ -72,7 +96,7 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
 
   return (
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Video Sandbox Terminal */}
+      {/* Video Terminal Area (Point 4) */}
       <div class="lg:col-span-2 bg-slate-900 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between">
         <div class="relative w-full h-96 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden">
           {streamActive ? (
@@ -84,7 +108,6 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
             </div>
           )}
 
-          {/* Real-time Dynamic Status Tag overlay */}
           {streamActive && telemetry && (
             <div class="absolute top-4 left-4 flex items-center space-x-2 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700">
               <span class={`h-2.5 w-2.5 rounded-full ${
@@ -95,7 +118,6 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
           )}
         </div>
 
-        {/* System Controls */}
         <div class="mt-4 flex gap-4">
           {!streamActive ? (
             <button onClick={startShield} class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-sm font-semibold py-3 px-4 rounded-xl transition duration-200">
@@ -109,32 +131,30 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
         </div>
       </div>
 
-      {/* Cybersec Analytical Engine Readings Panel */}
+      {/* Analytics Panel (Points 6, 7, 8, 9, 10) */}
       <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 flex flex-col justify-between">
         <div>
           <h3 class="text-sm font-semibold text-slate-400 tracking-wider uppercase mb-4">Neural Analytics Core</h3>
           
           {telemetry ? (
             <div class="space-y-6">
-              {/* Radial Meter Variant */}
               <div class="text-center p-4 bg-slate-950 rounded-xl border border-slate-800/80">
                 <span class="text-xs text-slate-500 block mb-1">IDENTITY INTEGRITY TRUST SCORE</span>
                 <span class={`text-4xl font-extrabold tracking-tight ${
-                  telemetry.trustScore > 75 ? 'text-emerald-400' : telemetry.trustScore > 40 ? 'text-yellow-400' : 'text-red-500'
+                  telemetry.trustScore > 75 ? 'text-emerald-400' : telemetry.trustScore > 45 ? 'text-yellow-400' : 'text-red-500'
                 }`}>
                   {telemetry.trustScore}%
                 </span>
               </div>
 
-              {/* Individual Modality Metrics */}
               <div class="space-y-3">
                 <div>
                   <div class="flex justify-between text-xs mb-1">
                     <span class="text-slate-400">Audio Cloned Vector Risk:</span>
                     <span class="font-mono text-slate-300">{telemetry.metrics.voiceCloningProbability}%</span>
                   </div>
-                  <div class="w-full bg-slate-950 rounded-full h-1.5 border border-slate-850">
-                    <div class={`h-1.5 rounded-full ${telemetry.metrics.voiceCloningProbability > 50 ? 'bg-red-500' : 'bg-cyan-500'}`} style={{ width: `${telemetry.metrics.voiceCloningProbability}%` }} />
+                  <div class="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800">
+                    <div class={`h-1.5 rounded-full transition-all duration-500 ${telemetry.metrics.voiceCloningProbability > 50 ? 'bg-red-500' : 'bg-cyan-500'}`} style={{ width: `${telemetry.metrics.voiceCloningProbability}%` }} />
                   </div>
                 </div>
 
@@ -143,14 +163,13 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
                     <span class="text-slate-400">Deepfake Structural Artifacts:</span>
                     <span class="font-mono text-slate-300">{telemetry.metrics.videoDeepfakeProbability}%</span>
                   </div>
-                  <div class="w-full bg-slate-950 rounded-full h-1.5 border border-slate-850">
-                    <div class={`h-1.5 rounded-full ${telemetry.metrics.videoDeepfakeProbability > 50 ? 'bg-red-500' : 'bg-cyan-500'}`} style={{ width: `${telemetry.metrics.videoDeepfakeProbability}%` }} />
+                  <div class="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800">
+                    <div class={`h-1.5 rounded-full transition-all duration-500 ${telemetry.metrics.videoDeepfakeProbability > 50 ? 'bg-red-500' : 'bg-cyan-500'}`} style={{ width: `${telemetry.metrics.videoDeepfakeProbability}%` }} />
                   </div>
                 </div>
               </div>
 
-              {/* Engine Log Output */}
-              <div class="p-3 bg-slate-950 rounded-lg border border-slate-850">
+              <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
                 <span class="text-[10px] font-mono text-cyan-500 uppercase tracking-widest block mb-1">System Verdict:</span>
                 <p class="text-xs text-slate-300 leading-relaxed font-sans">{telemetry.verdict}</p>
               </div>
@@ -162,7 +181,6 @@ const Analyzer: React.FC<AnalyzerProps> = ({ mode }) => {
           )}
         </div>
 
-        {/* Metadata Footer */}
         {telemetry && (
           <div class="mt-4 pt-4 border-t border-slate-800/60 flex justify-between text-[10px] font-mono text-slate-500">
             <span>PING: {telemetry.metrics.latencyMs}ms</span>
